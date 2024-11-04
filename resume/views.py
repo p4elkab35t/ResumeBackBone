@@ -96,6 +96,13 @@ class ResumeDownloadView(View):
     def get(self, request, id):
         try:
             resume = models.fetch_resum_by_id(request.COOKIES['UID'], id)
+            ### FIX TO PDF FORMATTER LATER
+            # if request.GET.get('format') == 'pdf':
+            #     pdfDoc = mdConvert.convertToPDF(mdConvert.convertToHTML(resume.data[0]['content']))
+            #     response = HttpResponse(pdfDoc, content_type='application/pdf')
+            #     response['Content-Disposition'] = f'attachment; filename="{resume.data[0]["title"]}.pdf"'
+            #     return response
+            # else:
             response = HttpResponse((resume.data[0]['content']), content_type='application/text')
             response['Content-Disposition'] = f'attachment; filename="{resume.data[0]['title']}.md"'
             return response
