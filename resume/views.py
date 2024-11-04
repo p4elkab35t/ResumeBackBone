@@ -1,4 +1,5 @@
 from django.http import JsonResponse, HttpResponse, HttpResponseNotFound, QueryDict
+from django.shortcuts import redirect
 from django.views import View
 from django.views.generic import ListView, DetailView
 from django.utils.decorators import method_decorator
@@ -25,7 +26,7 @@ class ResumeListView(View):
         resumes = models.create_resume(userID, 'New Resume')
         # except:
         #     return HttpResponse('Unauthorized ', status=401)
-        return HttpResponse(f'Resume created successfully {resumes.data}', status=201)
+        return redirect(f'/resume/{resumes.data[0]["id"]}')
 
 ## FIX LATER: BAD CODE: NOT WORKING
 # Import a new resume (POST)
