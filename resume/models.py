@@ -45,3 +45,8 @@ def delete_resume(userID, id):
     # Delete a resume from the database
     resume = supabase.table('Resume').delete().eq("userID", userID).eq("id", id).execute()
     return resume
+
+def getTemplate(id):
+    template = supabase.table('TemplateStyles').select().eq("id", id).execute()
+    # print(template.data[0])
+    return template

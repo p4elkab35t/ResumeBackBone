@@ -4,6 +4,7 @@ from django.views.generic import ListView, DetailView
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from . import models
+from . import mdConvert
 import json
 
 # List all resumes (GET)
@@ -26,6 +27,7 @@ class ResumeListView(View):
         #     return HttpResponse('Unauthorized ', status=401)
         return HttpResponse(f'Resume created successfully {resumes.data}', status=201)
 
+## FIX LATER: BAD CODE: NOT WORKING
 # Import a new resume (POST)
 @method_decorator(csrf_exempt, name='dispatch')
 class ResumeImportView(View):
@@ -77,18 +79,26 @@ class ResumeRenderView(View):
         try:
             resume = models.fetch_resum_by_id(request.COOKIES['UID'], id)
             resume = resume.data[0]
-            return HttpResponse(f"<h1>{resume['title']}</h1><p>{resume['content']}</p>", content_type='text/html')
-        except:
-            return HttpResponseNotFound('Resume not found')
+            template = resume['template']
+            if template is None or template < 1:
+                template = 1
+            print(type(template))
+            templateStyles = models.getTemplate(template)
+            styleText = templateStyles.data[0]['styles']
+            print(styleText)
+            htmlResume = mdConvert.convertToHTML(resume['content'], styleText)
+            return HttpResponse(htmlResume, content_type='text/html')
+        except Exception as e: 
+            return HttpResponseNotFound('Resume not found {}'.format(e))
 
 # Download a specific resume (GET)
 class ResumeDownloadView(View):
     def get(self, request, id):
         try:
             resume = models.fetch_resum_by_id(request.COOKIES['UID'], id)
-            response = HttpResponse(json.loads(resume), content_type='application/text')
-            response['Content-Disposition'] = f'attachment; filename="{resume.title}.txt"'
+            response = HttpResponse((resume.data[0]['content']), content_type='application/text')
+            response['Content-Disposition'] = f'attachment; filename="{resume.data[0]['title']}.md"'
             return response
-        except:
-            return HttpResponseNotFound('Resume not found')
+        except Exception as e:
+            return HttpResponseNotFound('Resume not found, {}'.format(e))
 
