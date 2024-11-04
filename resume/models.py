@@ -1,9 +1,12 @@
 from django.db import models
 import os
+from dotenv import load_dotenv
 from supabase import create_client, Client
 from datetime import datetime
 
 # Create a Supabase client
+
+load_dotenv()
 
 supabase_url = os.getenv('DB_URL')
 supabase_key = os.getenv('DB_KEY')
@@ -22,13 +25,13 @@ def fetch_resum_by_id(userID, id):
 
 def create_resume(userID, title, content = '{}'):
     # Create a new resume in the database
-    dateTime = datetime.now()
+    dateTime = datetime.now().isoformat()
     resume = supabase.table('Resume').insert({'userID': userID, 'title': title, 'content': content, 'createdAt': dateTime, 'lastModified': dateTime}).execute()
     return resume
 
 def update_resume(userID, id, title = None, content = None):
     # Update a resume in the database
-    dateTime = datetime.now()
+    dateTime = datetime.now().isoformat()
     if title is None and content is None:
         return {'message': 'No changes made'}
     if title is None:
