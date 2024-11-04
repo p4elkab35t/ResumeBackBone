@@ -3,13 +3,17 @@ from django.views import View
 from django.views.generic import ListView, DetailView
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from .models import Resume
+import models
 import json
 
 # List all resumes (GET)
 class ResumeListView(View):
     def get(self, request):
-        resumes = list(Resume.objects.values())
+        try:
+            userID = request.COOKIES['UID']
+            resumes = models.fetch_resumes(userID)
+        except:
+            return HttpResponse('Unauthorized', status=401)
         return JsonResponse(resumes, safe=False)
 
 # Import a new resume (POST)
@@ -17,7 +21,7 @@ class ResumeListView(View):
 class ResumeImportView(View):
     def post(self, request):
         data = json.loads(request.body)
-        resume = Resume.objects.create(title=data['title'], content=data['content'])
+        resume = models.create_resume(data['userID'], data['title'], data['content'])
         return JsonResponse({'id': resume.id, 'message': 'Resume imported successfully'})
 
 # Create a resume page (GET)
@@ -30,58 +34,56 @@ class ResumeCreateView(View):
 class ResumeDetailView(View):
     def get(self, request, id):
         try:
-            resume = Resume.objects.get(pk=id)
+            resume = models.fetch_resum_by_id(request.COOKIES['UID'], id)
             return JsonResponse({'title': resume.title, 'content': resume.content})
-        except Resume.DoesNotExist:
+        except:
             return HttpResponseNotFound('Resume not found')
 
     def patch(self, request, id):
         try:
-            resume = Resume.objects.get(pk=id)
             data = json.loads(request.body)
-            resume.title = data.get('title', resume.title)
-            resume.content = data.get('content', resume.content)
-            resume.save()
+            title = data.get('title', resume.title)
+            content = data.get('content', resume.content)
+            resume = models.update_resume(request.COOKIES['UID'], id, title, content)
             return JsonResponse({'message': 'Resume updated successfully'})
-        except Resume.DoesNotExist:
+        except:
             return HttpResponseNotFound('Resume not found')
 
     def post(self, request, id):
         try:
-            resume = Resume.objects.get(pk=id)
             data = json.loads(request.body)
-            resume.title = data.get('title', resume.title)
-            resume.content = data.get('content', resume.content)
-            resume.save()
+            title = data.get('title', title)
+            content = data.get('content', content)
+            resume = models.update_resume(request.COOKIES['UID'], id, title, content)
             return JsonResponse({'message': 'Resume saved successfully'})
-        except Resume.DoesNotExist:
+        except:
             return HttpResponseNotFound('Resume not found')
 
     def delete(self, request, id):
         try:
-            resume = Resume.objects.get(pk=id)
-            resume.delete()
+            resume = models.delete_resume(request.COOKIES['UID'], id)
             return JsonResponse({'message': 'Resume deleted successfully'})
-        except Resume.DoesNotExist:
+        except:
             return HttpResponseNotFound('Resume not found')
 
 # Render a specific resume (GET)
 class ResumeRenderView(View):
     def get(self, request, id):
         try:
-            resume = Resume.objects.get(pk=id)
+            resume = models.fetch_resum_by_id(request.COOKIES['UID'], id)
+            resume = json.loads(resume)
             return HttpResponse(f"<h1>{resume.title}</h1><p>{resume.content}</p>", content_type='text/html')
-        except Resume.DoesNotExist:
+        except:
             return HttpResponseNotFound('Resume not found')
 
 # Download a specific resume (GET)
 class ResumeDownloadView(View):
     def get(self, request, id):
         try:
-            resume = Resume.objects.get(pk=id)
-            response = HttpResponse(resume.content, content_type='application/text')
+            resume = models.fetch_resum_by_id(request.COOKIES['UID'], id)
+            response = HttpResponse(json.loads(resume), content_type='application/text')
             response['Content-Disposition'] = f'attachment; filename="{resume.title}.txt"'
             return response
-        except Resume.DoesNotExist:
+        except:
             return HttpResponseNotFound('Resume not found')
 
